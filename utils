@@ -1,0 +1,74 @@
+# encoding: utf-8
+from math import pi, cos, sin, log, floor, ceil
+
+
+def find_fine_h(init_angle=pi/4, r=20, min_n=3):
+    max_r, min_r, max_h, min_h = 100, 20, 15, 10
+    r = max([r, min_n*min_h/(2*r*sin(init_angle))])
+    h = (r-min_r)*(max_h-min_h)/(max_r-min_r)+min_h
+    points = [[r*cos(init_angle), r*sin(init_angle)]]
+    points_ = [[r*cos(init_angle), r*sin(init_angle) + h]]
+    step, lock = 1, 0
+    while r*sin(init_angle) + points[-1][1] > 0:
+        next_x = points[-1][0]
+        next_y = points[-1][1] - h
+        if next_x**2 + next_y**2 < r**2:
+            while next_x**2 + next_y**2 < r**2:
+                next_x += step
+            point = [next_x, next_y + h]
+        else:
+            if not lock:
+                lock = 1
+                points_.append(points[-1])
+            while next_x**2 + next_y**2 > r**2:
+                next_x -= step
+            point = [next_x, next_y]
+        points.append([next_x, next_y])
+        points_.append(point)
+    return h, points_
+
+
+def g2_statistics(corpus_counter, target_counter):
+    c = sum(target_counter.values())
+    c_d = float(sum(corpus_counter.values()))
+    d = c_d - c
+    word2g2 = {}
+    for w, a in target_counter.items():
+        a_b = corpus_counter[w]
+        b = a_b - a
+        e1 = c*a_b/c_d
+        e2 = d*a_b/c_d
+        if b == 0:
+            g2 = 2*a*log(a/e1)
+        else:
+            try:
+                g2 = 2*(a*log(a/e1)+b*log(b/e2))
+            except ZeroDivisionError:
+                g2 = 0
+        # If a > E1, the actual occurrence is higher than expected
+        if a > e1:
+            word2g2[w] = g2
+
+    word2g2 = sorted(word2g2.items(), key=lambda x: x[1], reverse=True)
+    return word2g2
+
+
+def typesetting(word2g2, line_num, max_length=8):
+    # construct list of combined words
+    ws = []
+    temp_str = ''
+    for item in word2g2:
+        w = item[0]
+        if len(w) >= max_length:
+            ws.append(w)
+            temp_str = ''
+        else:
+            temp = (temp_str + '/' + w).strip('/')
+            if len(temp) <= max_length:
+                temp_str = temp
+            else:
+                ws.append(temp_str)
+                temp_str = w
+        if len(ws) >= line_num:
+            break
+    return ws
